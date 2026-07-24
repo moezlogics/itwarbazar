@@ -1,0 +1,10 @@
+# Itwar Bazar Storefront
+
+> Your premier online fashion destination for clothing, footwear, and accessories.
+
+## Navigation
+
+- [Home](/) - The homepage with featured category rails, popular brands, and current promotional campaigns.
+- [Store](/store) - Browse all fashion products including clothing, shoes, and accessories. Supports filtering by brand, category, price range, size, and product specifications.
+- [Brands](/brands) - View all trusted fashion brands and designers.
+- [Blog](/blog) - Read the latest fashion tips, style guides, and trend articles.

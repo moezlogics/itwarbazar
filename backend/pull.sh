@@ -1,0 +1,20 @@
+#!/bin/bash
+echo "=== Pulling Backend Updates from GitHub ==="
+cd .deploy-source
+git pull origin main
+cd ..
+
+echo "=== Syncing files to Root ==="
+rsync -av --delete \
+  --exclude='.deploy-source/' \
+  --exclude='.git/' \
+  --exclude='.env' \
+  --exclude='pull.sh' \
+  --exclude='admin-static/' \
+  --exclude='node_modules/' \
+  --exclude='dist/' \
+  --exclude='ecosystem.config.js' \
+  --exclude='logs/' \
+  .deploy-source/backend/ .
+
+echo "=== Backend Updated Successfully ==="

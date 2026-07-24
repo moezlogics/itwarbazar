@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# local env files
+.env*.local
+.env
+.env.production
+
+# next.js build output
+.next/
+out/
+build/
+dist/
+
+# logs
+*.log
+logs/
+
+# Build caching/info
+*.tsbuildinfo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/

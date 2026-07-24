@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.medusa/
+.cache/
+uploads/
+.env*
+medusa-db.sql
+*.log
+.DS_Store
+.idea/
+.vscode/
+admin-static/
