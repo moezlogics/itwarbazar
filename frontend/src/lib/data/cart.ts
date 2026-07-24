@@ -651,6 +651,62 @@ export async function setAddressesAndPlace(currentState: unknown, formData: Form
 }
 
 /**
+ * Guarantee the cart has a usable, pending payment session BEFORE we try
+ * to complete it — otherwise Medusa throws "Payment sessions are required
+ * to complete cart".
+ *
+ * The Payment UI initiates a session client-side when it mounts, but that
+ * is racy: a shopper can hit "Complete order" before it resolves, the
+ * address `updateCart` right before placement can invalidate the
+ * collection, and a region with no auto-selected method leaves none at
+ * all. This runs server-side at the last moment, so the single-submit
+ * checkout is bulletproof: if a pending session already exists we do
+ * nothing; otherwise we initiate one, preferring the manual /
+ * cash-on-delivery provider (`pp_system_default`).
+ */
+async function ensurePaymentSession(cartId: string) {
+  const headers = { ...(await getAuthHeaders()) }
+
+  const cart = await retrieveCart(cartId)
+  if (!cart) return
+
+  const sessions = (cart as any).payment_collection?.payment_sessions || []
+  if (sessions.some((s: any) => s.status === "pending")) return
+
+  const regionId = (cart as any).region_id || (cart as any).region?.id
+
+  // Prefer the manual/COD provider; fall back to whatever the region offers.
+  let providerId = "pp_system_default"
+  try {
+    const { payment_providers } = await sdk.client.fetch<{
+      payment_providers: Array<{ id: string }>
+    }>("/store/payment-providers", {
+      method: "GET",
+      query: { region_id: regionId },
+      headers,
+      cache: "no-store",
+    })
+    if (payment_providers?.length) {
+      const manual = payment_providers.find((p) =>
+        String(p.id).startsWith("pp_system_default")
+      )
+      providerId = (manual || payment_providers[0]).id
+    }
+  } catch {
+    /* keep the pp_system_default fallback */
+  }
+
+  await sdk.store.payment.initiatePaymentSession(
+    cart as any,
+    { provider_id: providerId },
+    {},
+    headers
+  )
+  const cartCacheTag = await getCacheTag("carts")
+  revalidateTag(cartCacheTag)
+}
+
+/**
  * Places an order for a cart. If no cart ID is provided, it will use the cart ID from the cookies.
  * @param cartId - optional - The ID of the cart to place an order for.
  * @returns The cart object if the order was successful, or null if not.
@@ -665,6 +721,9 @@ export async function placeOrder(cartId?: string) {
   const headers = {
     ...(await getAuthHeaders()),
   }
+
+  // Last-moment guarantee that a payment session exists (see helper).
+  await ensurePaymentSession(id)
 
   const cartRes = await sdk.store.cart
     .complete(id, {}, headers)
