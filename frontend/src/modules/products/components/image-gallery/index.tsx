@@ -315,13 +315,72 @@ const ImageGallery = ({
                 onChange={handleThumbnailClick}
               />
             )}
+
+            {/* In-image thumbnail strip — bottom center over the main stage */}
+            {galleryItems.length > 1 && (
+              <div
+                className="absolute bottom-3 inset-x-0 z-20 flex justify-center pointer-events-none px-3"
+                aria-label="Gallery thumbnails"
+              >
+                <div className="pointer-events-auto flex flex-row gap-1.5 overflow-x-auto max-w-full scrollbar-hide items-center rounded-full bg-bg/85 backdrop-blur-md border border-line/50 px-2 py-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]">
+                  {galleryItems.map((item, i) => {
+                    const isActive = i === activeIndex
+                    const thumbSrc =
+                      item.type === "video"
+                        ? item.poster || undefined
+                        : item.url
+
+                    return (
+                      <button
+                        key={item.id || i}
+                        type="button"
+                        aria-pressed={isActive}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleThumbnailClick(i)
+                        }}
+                        className={`relative shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-surface transition-all duration-200 ${
+                          isActive
+                            ? "ring-2 ring-primary scale-105"
+                            : "ring-1 ring-line/40 opacity-70"
+                        }`}
+                      >
+                        {thumbSrc ? (
+                          <Image
+                            src={thumbSrc}
+                            alt={
+                              item.type === "video"
+                                ? `${altFallback || "Product"} video ${i + 1}`
+                                : altFor(item.url, i)
+                            }
+                            fill
+                            sizes="40px"
+                            quality={80}
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-ink/10 flex items-center justify-center">
+                            <i className="ph-fill ph-video-camera text-xs text-ink/40" aria-hidden />
+                          </div>
+                        )}
+                        {item.type === "video" && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-ink/25">
+                            <i className="ph-fill ph-play text-[8px] text-white ml-0.5" aria-hidden />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Thumbnails row (shown below the main stage on both mobile and desktop) */}
+        {/* Desktop thumbnails — below the main stage (mobile uses in-image strip) */}
         {galleryItems.length > 1 && (
-          <div className={`flex flex-row gap-2 overflow-x-auto py-1.5 scrollbar-hide items-center w-full scroll-smooth ${
-            galleryItems.length < 5 ? "justify-center" : "justify-start lg:justify-center"
+          <div className={`hidden lg:flex flex-row gap-2 overflow-x-auto py-1.5 scrollbar-hide items-center w-full scroll-smooth ${
+            galleryItems.length < 5 ? "justify-center" : "justify-center"
           }`}>
             {galleryItems.map((item, i) => {
               const isActive = i === activeIndex
@@ -336,7 +395,7 @@ const ImageGallery = ({
                   type="button"
                   aria-pressed={isActive}
                   onClick={() => handleThumbnailClick(i)}
-                  className={`relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 md:w-[72px] md:h-[72px] rounded-lg md:rounded-lg overflow-hidden bg-surface transition-all duration-200 ${
+                  className={`relative shrink-0 w-[72px] h-[72px] rounded-lg overflow-hidden bg-surface transition-all duration-200 ${
                     isActive
                        ? "ring-2 ring-primary"
                       : "ring-1 ring-line/50 opacity-60 hover:opacity-100"
@@ -351,21 +410,20 @@ const ImageGallery = ({
                           : altFor(item.url, i)
                       }
                       fill
-                      sizes="(max-width: 640px) 56px, 72px"
+                      sizes="72px"
                       quality={85}
                       className="object-cover"
                     />
                   ) : (
                     <div className="w-full h-full bg-ink/10 flex items-center justify-center">
-                      <i className="ph-fill ph-video-camera text-sm md:text-base text-ink/40" aria-hidden />
+                      <i className="ph-fill ph-video-camera text-base text-ink/40" aria-hidden />
                     </div>
                   )}
 
-                  {/* Video badge overlay on thumbnail */}
                   {item.type === "video" && (
                     <div className="absolute inset-0 flex items-center justify-center bg-ink/20">
-                      <div className="w-4 h-4 md:w-6 md:h-6 rounded-full bg-bg/90 flex items-center justify-center shadow-sm">
-                        <i className="ph-fill ph-play text-[6px] md:text-[10px] text-ink ml-0.5" aria-hidden />
+                      <div className="w-6 h-6 rounded-full bg-bg/90 flex items-center justify-center shadow-sm">
+                        <i className="ph-fill ph-play text-[10px] text-ink ml-0.5" aria-hidden />
                       </div>
                     </div>
                   )}

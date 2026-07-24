@@ -448,8 +448,10 @@ export default function ProductActions({
         <ProductPrice product={product} variant={selectedVariant} size="lg" />
       </div>
 
-      {/* Variant pickers */}
-      {(product.variants?.length ?? 0) > 1 && (
+      {/* Variant / option pickers — show whenever options exist, even if
+          there's only one variant (admin uses single-value options as
+          display choices like Size: 42). */}
+      {(product.options?.length ?? 0) > 0 && (
         <div className="flex flex-col gap-3 py-1">
           {(product.options || []).map((option) => (
             <OptionSelect
@@ -470,8 +472,8 @@ export default function ProductActions({
         </div>
       )}
 
-      {/* Single-variant products still deserve the size chart link. */}
-      {(product.variants?.length ?? 0) <= 1 && sizeChartUrl && (
+      {/* Size chart when there are no options to attach it under */}
+      {(product.options?.length ?? 0) === 0 && sizeChartUrl && (
         <div className="py-1">
           <SizeChart url={sizeChartUrl} />
         </div>
