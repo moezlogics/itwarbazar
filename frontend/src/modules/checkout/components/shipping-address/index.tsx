@@ -164,15 +164,36 @@ const ShippingAddress = ({
     }
   }, [])
 
-  useEffect(() => {
-    if (cart && cart.shipping_address) {
-      setFormAddress(cart?.shipping_address, cart?.email)
-    }
+  // Keep the half-filled form alive across a promo/loyalty apply (which
+  // refetches the cart and used to CLOBBER this form via a `[cart]` effect)
+  // and across a round-trip to sign in (which unmounts this component).
+  // Persisted per cart id, so a fresh cart after an order never restores
+  // stale typing.
+  const storageKey = cart?.id ? `checkout_shipping_${cart.id}` : null
 
-    if (cart && !cart.email && customer?.email) {
-      setFormAddress(undefined, customer.email)
-    }
-  }, [cart])
+  // Restore once on mount — the shopper's typing wins over the (usually
+  // empty, not-yet-saved) server cart address.
+  useEffect(() => {
+    if (!storageKey) return
+    try {
+      const saved = sessionStorage.getItem(storageKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed && typeof parsed === "object") {
+          setFormData((prev) => ({ ...prev, ...parsed }))
+        }
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey])
+
+  // Persist on every change.
+  useEffect(() => {
+    if (!storageKey) return
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(formData))
+    } catch {}
+  }, [storageKey, formData])
 
   // Handle full name change — split into first/last for API compatibility
   const handleFullNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {

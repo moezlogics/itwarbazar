@@ -667,8 +667,10 @@ export async function setAddressesAndPlace(currentState: unknown, formData: Form
 async function ensurePaymentSession(cartId: string) {
   const headers = { ...(await getAuthHeaders()) }
 
-  const cart = await retrieveCart(cartId)
-  if (!cart) return
+  // A transient fetch miss must not stop us initiating — fall back to a
+  // minimal cart, which the SDK will attach a fresh payment collection to.
+  const cart =
+    (await retrieveCart(cartId)) || ({ id: cartId } as HttpTypes.StoreCart)
 
   const sessions = (cart as any).payment_collection?.payment_sessions || []
   if (sessions.some((s: any) => s.status === "pending")) return
