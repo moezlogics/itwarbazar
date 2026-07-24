@@ -26,7 +26,9 @@ function fetchAllSearchProducts(): Promise<SearchItem[]> {
   if (cachedProducts) return Promise.resolve(cachedProducts)
   if (fetchPromise) return fetchPromise
 
-  fetchPromise = fetch("/api/products-search")
+  fetchPromise = fetch("/api/products-search", {
+    signal: AbortSignal.timeout(10000),
+  })
     .then((res) => {
       if (!res.ok) throw new Error("Search list failed")
       return res.json()
@@ -289,6 +291,9 @@ async function fetchTrendingSearches(): Promise<string[]> {
         ? { "x-publishable-api-key": PUBLISHABLE_KEY }
         : undefined,
       cache: "default",
+      // Never let a stalled request hang the search / page. Fails silently
+      // to [] — trending suggestions are a nice-to-have, not essential.
+      signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return []
     const data = (await res.json()) as { queries?: string[] }
@@ -330,11 +335,23 @@ export default function SmartSearchBar() {
   const [recentSearches, setRecentSearches] = useState<string[]>([])
   const [trending, setTrending] = useState<string[]>([])
 
+  const trendingLoaded = useRef(false)
+
   useEffect(() => {
     setMounted(true)
     setRecentSearches(getRecentSearches())
-    fetchTrendingSearches().then((q) => setTrending(q))
+    // Trending is NOT fetched here — it only appears inside the search
+    // dropdown, so firing it on every page load just added a request
+    // (that could stall) to every page. Loaded lazily on first open below.
   }, [])
+
+  // Load trending once, the first time the search actually opens.
+  useEffect(() => {
+    if ((isOpen || isMobileOpen) && !trendingLoaded.current) {
+      trendingLoaded.current = true
+      fetchTrendingSearches().then((q) => setTrending(q))
+    }
+  }, [isOpen, isMobileOpen])
 
   const startLoadingProducts = () => {
     if (cachedProducts) {

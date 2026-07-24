@@ -25,7 +25,18 @@ type StoreFetchOptions = {
   /** Passed straight to Next's fetch — revalidate / tags. */
   next?: { revalidate?: number | false; tags?: string[] }
   cache?: RequestCache
+  /** Abort after this many ms so a hung backend never freezes the UI. */
+  timeoutMs?: number
 }
+
+/**
+ * Hard cap on every client request. Without it a single slow/stalled
+ * backend call (reviews, trending, guest lookup…) kept the browser's
+ * loading indicator spinning indefinitely — the "site never finishes
+ * loading" symptom. Callers already try/catch and degrade gracefully,
+ * so a timeout just turns an infinite hang into a fast, silent failure.
+ */
+const DEFAULT_TIMEOUT_MS = 10000
 
 /**
  * Fetch a /store endpoint with the publishable-key header. Throws on a
@@ -56,6 +67,7 @@ export async function storeFetch<T>(
     ...(opts.body !== undefined ? { body: JSON.stringify(opts.body) } : {}),
     ...(opts.next ? { next: opts.next } : {}),
     ...(opts.cache ? { cache: opts.cache } : {}),
+    signal: AbortSignal.timeout(opts.timeoutMs ?? DEFAULT_TIMEOUT_MS),
   })
 
   if (!res.ok) {
