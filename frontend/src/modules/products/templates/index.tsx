@@ -11,7 +11,8 @@ import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 import { getBaseURL } from "@lib/util/env"
 import { getProductReviewStats, getProductReviewsForJsonLd } from "@lib/data/reviews"
-import { getBrandForProduct } from "@lib/data/brands"
+import { getBrandForProduct, listBrands } from "@lib/data/brands"
+import { buildBrandPath } from "@lib/util/brand-path"
 import { buildAltMap } from "@lib/data/cdn-meta"
 import { buildSpecMap } from "@lib/util/spec-groups"
 import { getPreorderState } from "@lib/util/preorder"
@@ -122,10 +123,11 @@ const ProductTemplate = async ({
     product.variants?.[0]?.calculated_price?.currency_code ||
     region.currency_code
 
-  const [stats, brand, reviews, bundles, altMap, specTemplateResult, settings] =
+  const [stats, brand, brands, reviews, bundles, altMap, specTemplateResult, settings] =
     await Promise.all([
       getProductReviewStats(product.id).catch(() => null),
       getBrandForProduct(product.id).catch(() => null),
+      listBrands().catch(() => []),
       getProductReviewsForJsonLd(product.id, 10).catch(() => []),
       getBundlesForProduct(
         product.id,
@@ -148,6 +150,15 @@ const ProductTemplate = async ({
       ).catch(() => ({ template: null, source_name: null })),
       getSiteSettings().catch(() => ({})),
     ])
+
+  const brandBadge =
+    brand?.name && brand?.handle
+      ? {
+          name: brand.name,
+          logoUrl: brand.logo_url || null,
+          href: `/${buildBrandPath(brand, brands || [])}`,
+        }
+      : null
 
   const aspectRatioClass = resolveProductCardAspectClass(settings || {})
 
@@ -473,13 +484,13 @@ const ProductTemplate = async ({
               altFallback={product.title || "Product image"}
               aspectRatioClass={aspectRatioClass}
               variantImageIds={variantImageIds}
+              brandBadge={brandBadge}
             />
           </div>
 
-          {/* Title first, brand underneath */}
+          {/* Title + rating (brand lives on the main image) */}
           <div className="flex flex-col gap-1.5">
             <ProductInfo product={product} mode="title-only" />
-            <ProductInfo product={product} mode="brand-only" />
           </div>
 
           {/* Mobile Actions & Checkout Controls Stack */}
@@ -512,6 +523,7 @@ const ProductTemplate = async ({
               altFallback={product.title || "Product image"}
               aspectRatioClass={aspectRatioClass}
               variantImageIds={variantImageIds}
+              brandBadge={brandBadge}
             />
           </div>
 

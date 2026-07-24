@@ -442,12 +442,6 @@ export default function ProductActions({
 
   return (
     <div className="flex flex-col gap-3.5" ref={actionsRef}>
-      {/* Price — shown in-flow on all viewports (sticky bar also shows it
-          on phones for thumb reach). */}
-      <div className="w-full">
-        <ProductPrice product={product} variant={selectedVariant} size="lg" />
-      </div>
-
       {/* Variant / option pickers — show whenever options exist, even if
           there's only one variant (admin uses single-value options as
           display choices like Size: 42). */}
@@ -479,7 +473,7 @@ export default function ProductActions({
         </div>
       )}
 
-      {/* Stock status — just above quantity / buy actions */}
+      {/* Stock status — just above price / quantity / buy actions */}
       {forSale && stockLabel && (
         <div className="flex items-center gap-2 text-xs font-medium text-ink/75 self-start">
           <span className="relative flex h-2 w-2">
@@ -498,6 +492,11 @@ export default function ProductActions({
           )}
         </div>
       )}
+
+      {/* Price — above quantity / Buy Now */}
+      <div className="w-full">
+        <ProductPrice product={product} variant={selectedVariant} size="lg" />
+      </div>
 
       {/* Quantity Stepper — compact horizontal row on mobile */}
       {forSale && (

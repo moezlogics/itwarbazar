@@ -5,6 +5,7 @@ import Image from "next/image"
 import { useRef, useState, useCallback, useEffect, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 // The lightbox library + its 4 plugins + CSS are a heavy JS chunk that's
 // only needed AFTER the shopper taps an image. Load it lazily (ssr:false,
@@ -45,6 +46,12 @@ type ImageGalleryProps = {
    * client-side (ISR pages cannot read the query string server-side).
    */
   variantImageIds?: Record<string, string[]>
+  /** Brand chip overlaid top-left on the main stage. */
+  brandBadge?: {
+    name: string
+    logoUrl?: string | null
+    href: string
+  } | null
 }
 
 /**
@@ -66,6 +73,7 @@ const ImageGallery = ({
   altFallback,
   aspectRatioClass,
   variantImageIds,
+  brandBadge,
 }: ImageGalleryProps) => {
   const aspectClass = aspectRatioClass || "aspect-square"
   const altFor = (url: string, index: number) =>
@@ -207,6 +215,7 @@ const ImageGallery = ({
                   preload="metadata"
                   onClick={(e) => e.stopPropagation()}
                 />
+                <BrandImageBadge badge={brandBadge} />
                 {/* Fullscreen hint */}
                 <button
                   type="button"
@@ -252,6 +261,7 @@ const ImageGallery = ({
                     } : undefined}
                   />
                 )}
+                <BrandImageBadge badge={brandBadge} />
                 {/* Enlarge hint */}
                 <span
                   className={`absolute bottom-2.5 right-2.5 bg-bg/90 backdrop-blur text-ink text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 shadow-soft pointer-events-none ${isZooming ? "opacity-0" : "opacity-0 group-hover:opacity-100"} transition-opacity`}
@@ -296,8 +306,6 @@ const ImageGallery = ({
                       alt={altFor(item.url, i)}
                       fill
                       priority={i === 0}
-                      /* On mobile the PDP shows the gallery in full width,
-                         so we use 100vw for mobile viewports and 50vw for desktop. */
                       sizes="(max-width: 1024px) 100vw, 50vw"
                       quality={75}
                       className="object-cover"
@@ -306,6 +314,9 @@ const ImageGallery = ({
                 </div>
               ))}
             </div>
+
+            {/* Brand chip — top left over the mobile stage */}
+            <BrandImageBadge badge={brandBadge} />
 
             {/* Prev/Next arrows on mobile */}
             {galleryItems.length > 1 && (
@@ -458,6 +469,44 @@ function getVideoMimeType(url: string): string {
     case "avi": return "video/x-msvideo"
     default: return "video/mp4"
   }
+}
+
+/** Brand chip — top-left over the main gallery stage. */
+function BrandImageBadge({
+  badge,
+}: {
+  badge?: ImageGalleryProps["brandBadge"]
+}) {
+  if (!badge?.name) return null
+
+  return (
+    <div className="absolute top-2.5 left-2.5 z-20 pointer-events-auto">
+      <LocalizedClientLink
+        href={badge.href}
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-1.5 rounded-full bg-bg/90 backdrop-blur-md border border-line/60 pl-1 pr-2.5 py-1 shadow-[0_6px_18px_-8px_rgba(0,0,0,0.35)] hover:border-primary/40 transition-colors"
+      >
+        <span className="relative w-6 h-6 overflow-hidden rounded-full bg-white border border-line/50 shrink-0">
+          {badge.logoUrl ? (
+            <Image
+              src={badge.logoUrl}
+              alt={badge.name}
+              fill
+              sizes="24px"
+              className="object-contain p-0.5"
+            />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-[9px] font-bold text-ink/70">
+              {badge.name.charAt(0).toUpperCase()}
+            </span>
+          )}
+        </span>
+        <span className="text-[11px] font-semibold text-ink leading-none max-w-[7.5rem] truncate">
+          {badge.name}
+        </span>
+      </LocalizedClientLink>
+    </div>
+  )
 }
 
 /**

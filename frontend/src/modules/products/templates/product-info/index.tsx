@@ -140,7 +140,6 @@
       )
     }
 
-    const hasBrand = !!brand?.name
     const hasRating = !!(stats && stats.reviewCount > 0)
 
     if (mode === "brand-only") {
@@ -185,7 +184,7 @@
       return null
     }
 
-    // mode === "main": title + brand + (optional) rating row
+    // mode === "main": title + (optional) rating — brand sits on the gallery image
     return (
       <div id="product-info" className="flex flex-col gap-2">
         <h1
@@ -200,23 +199,12 @@
           )}
         </h1>
 
-        {(hasBrand || hasRating) && (
+        {hasRating && (
           <div className="flex items-center gap-3.5 flex-wrap">
-            {hasBrand && (() => {
-              const parentBrand = brand!.parent_id ? brands?.find(b => b?.id === brand!.parent_id) : null
-              return (
-                <div className="flex flex-wrap items-center gap-2">
-                  {parentBrand && <BrandInline brand={parentBrand as any} brands={brands as any[]} />}
-                  <BrandInline brand={brand as any} brands={brands as any[]} />
-                </div>
-              )
-            })()}
-            {hasRating && (
-              <StarRating
-                rating={stats!.averageRating}
-                count={stats!.reviewCount}
-              />
-            )}
+            <StarRating
+              rating={stats!.averageRating}
+              count={stats!.reviewCount}
+            />
           </div>
         )}
       </div>
