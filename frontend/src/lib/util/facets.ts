@@ -272,9 +272,13 @@ export function buildFacets(
     const seen = new Set<string>()
     for (const cat of p.categories || []) {
       if (!cat?.handle) continue
+      // Dropped as a facet VALUE (admin "Hide from filters", or the
+      // archive's own category/ancestors).
       if (cat.id && excludeCategoryIds?.has(cat.id)) continue
 
       const parent = cat.parent_category
+      // Dropped as a whole GROUP: hiding a parent hides its filter group.
+      if (parent?.id && excludeCategoryIds?.has(parent.id)) continue
       const parentKey = parent?.id || parent?.handle || "__top__"
       const parentHandle = parent?.handle || "top"
       const groupLabel = parent?.name || "Category"

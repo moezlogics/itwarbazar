@@ -131,10 +131,10 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
                 title={v}
                 data-testid="option-button"
                 className={clx(
-                  "relative w-8 h-8 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  "relative w-7 h-7 sm:w-8 sm:h-8 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   "disabled:opacity-40 disabled:cursor-not-allowed",
                   active
-                    ? "ring-2 ring-primary ring-offset-2 ring-offset-bg scale-[1.05]"
+                    ? "ring-2 ring-primary ring-offset-1 sm:ring-offset-2 ring-offset-bg scale-[1.05]"
                     : "hover:scale-[1.08] ring-1 ring-line"
                 )}
                 style={{
@@ -183,13 +183,8 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
               aria-pressed={active}
               data-testid="option-button"
               className={clx(
-                // Sizes are the primary thing a shopper taps on a fashion
-                // PDP, so these meet the 44px mobile touch-target guideline
-                // instead of the old 32px pills.
-                // NOTE: explicit px, not `h-11`. globals.css drops the ROOT
-                // font-size to 14px under 768px, so rem-based Tailwind sizes
-                // silently shrink there (h-11 → 38.5px, under the guideline).
-                "min-w-[52px] min-h-[44px] px-4 rounded-xl text-sm font-semibold transition-all duration-200",
+                // Compact on mobile; a touch larger from sm up.
+                "min-w-[40px] min-h-[36px] px-3 rounded-lg text-[12px] sm:min-w-[48px] sm:min-h-[40px] sm:px-3.5 sm:rounded-xl sm:text-sm font-semibold transition-all duration-200",
                 "border disabled:opacity-40 disabled:cursor-not-allowed",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                 active

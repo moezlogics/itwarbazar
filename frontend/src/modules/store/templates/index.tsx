@@ -12,6 +12,7 @@ import { listProducts } from "@lib/data/products"
 import { PRODUCT_ARCHIVE_FIELDS } from "@lib/util/product-card-fields"
 import { buildFacets, type SpecTemplateField } from "@lib/util/facets"
 import { isProductInStock } from "@lib/util/product"
+import { getSiteSettings } from "@lib/data/site-settings"
 import { getCacheOptions } from "@lib/data/cookies"
 import { sdk } from "@lib/config"
 import PaginatedProducts from "./paginated-products"
@@ -111,7 +112,7 @@ const StoreTemplate = async ({
       ? [categoryId]
       : undefined
 
-  const [categories, brands, allProductsInScopeRes, specTemplatesRes] = await Promise.all([
+  const [categories, brands, allProductsInScopeRes, specTemplatesRes, settings] = await Promise.all([
     listCategories().catch(() => []),
     listBrands().catch(() => []),
     // When scoped to a brand with NO products (productsIds === []), skip
@@ -149,6 +150,7 @@ const StoreTemplate = async ({
         })
       )
       .catch(() => ({ spec_templates: [] })),
+    getSiteSettings().catch(() => ({} as any)),
   ])
 
   // Out-of-stock products are hidden from archive grids (see
@@ -200,6 +202,16 @@ const StoreTemplate = async ({
     node = node.parent_category, guard++
   ) {
     if (node.id) excludeCategoryIds.add(node.id)
+  }
+
+  // Admin-hidden categories (Category Display → "Hide from filters"). A
+  // comma-separated id list; each id is dropped as a facet value, and if
+  // it's a parent its whole group is dropped (see buildFacets).
+  for (const id of String((settings as any)?.filter_excluded_category_ids || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)) {
+    excludeCategoryIds.add(id)
   }
 
   const facets = buildFacets(allProductsInScope as any[], {
