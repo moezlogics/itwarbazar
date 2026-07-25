@@ -3,7 +3,6 @@
 import { HttpTypes } from "@medusajs/types"
 import Image from "next/image"
 import { useRef, useState, useCallback, useEffect, useMemo } from "react"
-import { useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
@@ -93,17 +92,35 @@ const ImageGallery = ({
   const videoRef = useRef<HTMLVideoElement>(null)
   const mobileScrollRef = useRef<HTMLDivElement>(null)
 
-  const searchParams = useSearchParams()
-  const vId = searchParams.get("v_id")
+  // Read the selected variant from the URL AFTER mount (client-only),
+  // NOT via useSearchParams(). On an ISR page useSearchParams() forces the
+  // whole gallery — including the LCP product image — to render on the
+  // CLIENT, so the image was absent from the server HTML and LCP was
+  // enormous. Reading window.location in an effect keeps the initial
+  // (server) render independent of the query: it shows all images with
+  // the first active, so the LCP image ships in the HTML. Variant
+  // narrowing then applies a beat later, and reacts to ProductActions'
+  // `itwar:variant-change` event when the shopper picks a variant.
+  const [vId, setVId] = useState<string | null>(null)
+  useEffect(() => {
+    const read = () =>
+      setVId(new URLSearchParams(window.location.search).get("v_id"))
+    read()
+    window.addEventListener("popstate", read)
+    window.addEventListener("itwar:variant-change", read)
+    return () => {
+      window.removeEventListener("popstate", read)
+      window.removeEventListener("itwar:variant-change", read)
+    }
+  }, [])
 
   const safeImages = useMemo(() => {
     const all = (images || []).filter((i) => !!i?.url)
-    const vId = searchParams.get("v_id")
     if (!vId || !variantImageIds?.[vId]?.length) return all
     const allowed = new Set(variantImageIds[vId])
     const narrowed = all.filter((img) => img.id && allowed.has(img.id))
     return narrowed.length > 0 ? narrowed : all
-  }, [images, searchParams, variantImageIds])
+  }, [images, vId, variantImageIds])
 
   // Reset to first slide when variant selection changes.
   useEffect(() => {

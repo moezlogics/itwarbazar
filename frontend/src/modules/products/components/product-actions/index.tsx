@@ -7,7 +7,7 @@ import { appendOptimisticLine } from "@lib/util/optimistic-cart"
 import { useCartDrawer } from "@lib/context/cart-drawer-context"
 
 import { HttpTypes } from "@medusajs/types"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProductPrice from "../product-price"
 
@@ -75,7 +75,11 @@ export default function ProductActions({
 }: ProductActionsProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
+  // NOTE: intentionally NOT useSearchParams(). On an ISR product page it
+  // forces the whole actions panel (price + Add to Cart) to render on the
+  // client, so it was missing from the server HTML and hurt LCP/first
+  // paint. The `?v_id` is read from window.location inside effects instead
+  // (client-only, after mount), keeping the initial render server-side.
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [qty, setQty] = useState(1)
@@ -103,7 +107,11 @@ export default function ProductActions({
     if (variants.length === 0) return
     if (Object.keys(options).length > 0) return
 
-    const variantFromUrl = variants.find((v) => v.id === searchParams.get("v_id"))
+    const urlVId =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("v_id")
+        : null
+    const variantFromUrl = variants.find((v) => v.id === urlVId)
     if (variantFromUrl) {
       setOptions(optionsAsKeymap(variantFromUrl.options) ?? {})
       return
@@ -126,7 +134,7 @@ export default function ProductActions({
     setOptions(
       optionsAsKeymap((matching ?? variants[0]).options) ?? defaults
     )
-  }, [options, product.variants, product.options, searchParams])
+  }, [options, product.variants, product.options])
 
   const selectedVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) {
@@ -159,7 +167,7 @@ export default function ProductActions({
     const totalVariants = product.variants?.length ?? 0
     if (totalVariants <= 1) return
 
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(window.location.search)
     const value = isValidVariant ? selectedVariant?.id : null
 
     if (params.get("v_id") === value) return
@@ -169,7 +177,10 @@ export default function ProductActions({
 
     const qs = params.toString()
     router.replace(qs ? `${pathname}?${qs}` : pathname)
-  }, [selectedVariant, isValidVariant])
+    // Tell the gallery (which no longer uses useSearchParams) to re-read
+    // the variant so it can narrow the images to the selection.
+    window.dispatchEvent(new Event("itwar:variant-change"))
+  }, [selectedVariant, isValidVariant, pathname, router])
 
   const inStock = useMemo(() => {
     if (selectedVariant && !selectedVariant.manage_inventory) return true

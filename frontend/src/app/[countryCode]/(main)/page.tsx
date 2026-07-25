@@ -159,9 +159,13 @@ export default async function Home(props: {
               feel. */}
           <ul className="flex flex-col mt-0">
             <li>
-              <Suspense fallback={<GridSkeleton count={8} />}>
-                <ProductRail region={region} />
-              </Suspense>
+              {/* Above-the-fold rail rendered IN THE SHELL (no Suspense):
+                  its first product image is the mobile LCP. Behind a
+                  Suspense skeleton the image swapped in late and Lighthouse
+                  couldn't settle an LCP (NO_LCP → Performance errored). The
+                  listing query is ISR-cached, so this rarely blocks TTFB,
+                  and in return the LCP image ships in the initial HTML. */}
+              <ProductRail region={region} />
             </li>
           </ul>
 
