@@ -118,7 +118,7 @@ export default function CategoryCarousel({
         ref={trackRef}
         className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory px-2 py-2 -mx-2"
       >
-        {items.map((c) => (
+        {items.map((c, i) => (
           <LocalizedClientLink
             key={c.id}
             href={`${linkPrefix}${c.handle}`}
@@ -134,6 +134,10 @@ export default function CategoryCarousel({
                     fill
                     sizes={`(max-width: 768px) ${iconSize.mobile}px, ${iconSize.desktop}px`}
                     className="object-contain"
+                    // The first row of category icons is ABOVE THE FOLD — a
+                    // lazy LCP image is a Lighthouse red flag. Eager-load the
+                    // first few (the rest scroll horizontally off-screen).
+                    priority={i < 5}
                   />
                 </div>
               ) : (
