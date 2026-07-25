@@ -172,10 +172,12 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
               "/icons/phosphor/bold/style.css",
               "/icons/phosphor/fill/style.css",
               ...(fontHref ? [fontHref] : []),
-            ])};function inject(){for(var i=0;i<u.length;i++){var l=document.createElement("link");l.rel="stylesheet";l.href=u[i];document.head.appendChild(l);}}/* Defer until the browser is idle so the ~420KB Phosphor icon fonts
-            don't compete with the LCP product image for Slow-4G bandwidth.
-            Body text uses the next/font Instrument Sans (already preloaded),
-            so deferring these only delays decorative icons by a beat. */
+            ])};function inject(){for(var i=0;i<u.length;i++){var l=document.createElement("link");l.rel="stylesheet";l.href=u[i];document.head.appendChild(l);}}/* Defer icon CSS until idle so it never blocks first paint. The woff2
+            fonts are now SUBSET to only the ~128 icons this site actually
+            uses (~42KB total, down from ~420KB — see .phosphor-backup for
+            the originals and scratchpad/subset_phosphor.py to regenerate),
+            so they load in a blink once injected. Body text uses next/font
+            Instrument Sans (preloaded), so this only delays icons a beat. */
             if('requestIdleCallback' in window){requestIdleCallback(inject,{timeout:1800});}else{setTimeout(inject,200);}})();`,
           }}
         />
