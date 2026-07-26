@@ -11,7 +11,7 @@ import { getBrandByPath, getBrandForProduct, listBrands } from "@lib/data/brands
 import { canonicalUrl } from "@lib/util/seo-url"
 import { buildCategoryPath, buildCategoryChain } from "@lib/util/category-path"
 import { buildBrandPath, getBrandPath } from "@lib/util/brand-path"
-import { getImagesForVariant } from "@lib/util/product"
+import { getImagesForVariant, preparePdpGalleryImages } from "@lib/util/product"
 
 
 import ProductTemplate from "@modules/products/templates"
@@ -297,9 +297,9 @@ export default async function SlugPage(props: Props) {
     ])
     if (!region) notFound()
 
-    // All product images render server-side; the ?v_id variant selection
-    // narrows the gallery CLIENT-side (an ISR page can't see the query).
-    const images = pricedProduct.images ?? []
+    // Merge featured thumbnail + sort by admin `rank` so PDP gallery
+    // matches the product card and the admin media order.
+    const images = preparePdpGalleryImages(pricedProduct)
     const primaryCategory = pricedProduct.categories?.[0]
 
     const categoryChain = buildCategoryChain(primaryCategory)

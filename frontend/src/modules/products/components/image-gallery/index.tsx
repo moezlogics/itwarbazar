@@ -115,10 +115,20 @@ const ImageGallery = ({
   }, [])
 
   const safeImages = useMemo(() => {
-    const all = (images || []).filter((i) => !!i?.url)
+    // Defense in depth: keep admin rank order even if a caller forgot
+    // to run preparePdpGalleryImages. Synthetic thumbnail (rank -1) stays first.
+    const all = [...(images || [])]
+      .filter((i) => !!i?.url)
+      .sort((a: any, b: any) => {
+        const ra = typeof a.rank === "number" ? a.rank : Number.MAX_SAFE_INTEGER
+        const rb = typeof b.rank === "number" ? b.rank : Number.MAX_SAFE_INTEGER
+        return ra - rb
+      })
     if (!vId || !variantImageIds?.[vId]?.length) return all
     const allowed = new Set(variantImageIds[vId])
     const narrowed = all.filter((img) => img.id && allowed.has(img.id))
+    // If variant filter would drop everything (e.g. only synthetic thumb),
+    // fall back to the full ordered gallery.
     return narrowed.length > 0 ? narrowed : all
   }, [images, vId, variantImageIds])
 

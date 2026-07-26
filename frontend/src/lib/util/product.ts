@@ -30,7 +30,7 @@ export function getProductPath(
  * If no variant is selected or the variant has no specific images, returns all product images.
  */
 export function getImagesForVariant(product: any, selectedVariantId?: string) {
-  const productImages = product.images ?? []
+  const productImages = preparePdpGalleryImages(product)
   if (!selectedVariantId || !product.variants) {
     return productImages
   }
@@ -42,7 +42,66 @@ export function getImagesForVariant(product: any, selectedVariantId?: string) {
   }
 
   const imageIdsMap = new Map(variantImages.map((i: any) => [i.id, true]))
-  return productImages.filter((i: any) => imageIdsMap.has(i.id))
+  // Keep admin rank order; only drop images that aren't on this variant.
+  // Synthetic thumbnail rows (id "product-thumbnail") stay if their URL
+  // matches a variant image URL.
+  const variantUrls = new Set(
+    variantImages.map((i: any) => normalizeImageUrl(i?.url)).filter(Boolean)
+  )
+  return productImages.filter(
+    (i: any) =>
+      (i.id && imageIdsMap.has(i.id)) ||
+      (i.url && variantUrls.has(normalizeImageUrl(i.url)))
+  )
+}
+
+/** Strip CDN/query noise so thumbnail ↔ gallery URL matching is reliable. */
+function normalizeImageUrl(url?: string | null): string {
+  if (!url) return ""
+  return url.split("?")[0].replace(/\/$/, "").trim()
+}
+
+/**
+ * Build the PDP gallery list so it matches admin media:
+ *  1. Sort by Medusa `image.rank` (admin drag-and-drop order)
+ *  2. Ensure the featured `product.thumbnail` is present — cards already
+ *     show it, but Medusa stores thumbnail separately from `images[]`,
+ *     so it can be missing from the gallery entirely.
+ */
+export function preparePdpGalleryImages(product: {
+  thumbnail?: string | null
+  images?: Array<{
+    id?: string
+    url?: string | null
+    rank?: number | null
+  }> | null
+}): HttpTypes.StoreProductImage[] {
+  const sorted = [...(product.images ?? [])]
+    .filter((i) => !!i?.url)
+    .sort((a, b) => {
+      const ra = typeof a.rank === "number" ? a.rank : Number.MAX_SAFE_INTEGER
+      const rb = typeof b.rank === "number" ? b.rank : Number.MAX_SAFE_INTEGER
+      return ra - rb
+    }) as HttpTypes.StoreProductImage[]
+
+  const thumb = product.thumbnail?.trim()
+  if (!thumb) return sorted
+
+  const thumbKey = normalizeImageUrl(thumb)
+  const alreadyInGallery = sorted.some(
+    (i) => normalizeImageUrl(i.url) === thumbKey
+  )
+  if (alreadyInGallery) return sorted
+
+  // Featured URL isn't in images[] — prepend so PDP matches the product card.
+  return [
+    {
+      id: "product-thumbnail",
+      url: thumb,
+      rank: -1,
+    } as HttpTypes.StoreProductImage,
+    ...sorted,
+  ]
 }
 
 /**
