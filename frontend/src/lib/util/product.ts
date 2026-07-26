@@ -50,6 +50,9 @@ export function getImagesForVariant(product: any, selectedVariantId?: string) {
   )
   return productImages.filter(
     (i: any) =>
+      // The featured image lives outside images[] (product.thumbnail), so it
+      // is never in a variant's id list — keep it or it vanishes on select.
+      i.id === "product-thumbnail" ||
       (i.id && imageIdsMap.has(i.id)) ||
       (i.url && variantUrls.has(normalizeImageUrl(i.url)))
   )

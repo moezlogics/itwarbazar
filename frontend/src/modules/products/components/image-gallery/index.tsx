@@ -126,9 +126,18 @@ const ImageGallery = ({
       })
     if (!vId || !variantImageIds?.[vId]?.length) return all
     const allowed = new Set(variantImageIds[vId])
-    const narrowed = all.filter((img) => img.id && allowed.has(img.id))
-    // If variant filter would drop everything (e.g. only synthetic thumb),
-    // fall back to the full ordered gallery.
+    const narrowed = all.filter(
+      (img) =>
+        // The featured image is stored OUTSIDE Medusa's images[] (it's
+        // `product.thumbnail`), so it can never appear in a variant's image
+        // id list. Without this it silently vanished from the gallery the
+        // moment a variant was selected — the "featured image missing on the
+        // product page" bug. It is the product's identity shot; keep it.
+        img.id === "product-thumbnail" ||
+        (img.id && allowed.has(img.id))
+    )
+    // If variant filter would drop everything, fall back to the full
+    // ordered gallery.
     return narrowed.length > 0 ? narrowed : all
   }, [images, vId, variantImageIds])
 
