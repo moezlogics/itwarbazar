@@ -62,9 +62,13 @@ export const listProducts = async ({
             limit,
             offset,
             region_id: region?.id,
-            fields:
-              "*variants.calculated_price,+variants.inventory_quantity,*variants.images,+variants.metadata,+metadata,+tags,*categories,thumbnail,*images",
             ...queryParams,
+            // Explicit product scalars are required. In Medusa v2, a custom
+            // `fields` list can drop defaults — without title/handle the PDP
+            // treats the product as path "/" and permanentRedirects to home.
+            // Keep this AFTER ...queryParams so callers can't wipe it.
+            fields:
+              "+id,+title,+handle,+description,+subtitle,+status,+thumbnail,+metadata,*variants.calculated_price,+variants.inventory_quantity,*variants.images,+variants.metadata,+tags,*categories,*images,*collection",
           },
           headers,
           next,

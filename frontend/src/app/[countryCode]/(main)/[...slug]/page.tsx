@@ -281,7 +281,13 @@ export default async function SlugPage(props: Props) {
     const { getProductPath } = await import("@lib/util/product")
     const canonicalPath = getProductPath(pricedProduct)
     const currentPath = `/${segments.join("/")}`
-    if (currentPath !== canonicalPath) {
+    // Only redirect when we have a real product handle. A missing handle
+    // makes getProductPath return "/" and would bounce every PDP to home.
+    if (
+      pricedProduct.handle &&
+      canonicalPath !== "/" &&
+      currentPath !== canonicalPath
+    ) {
       // Redirect legacy paths to the canonical URL. Query params are NOT
       // preserved — reading them would force dynamic rendering (breaking
       // ISR), and the client re-derives variant/filter state anyway.
