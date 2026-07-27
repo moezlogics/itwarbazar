@@ -7,6 +7,7 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 import { getCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
 import { getProductBrandMap } from "./brands"
+import { PRODUCT_PDP_FIELDS } from "@lib/util/product-card-fields"
 
 export const listProducts = async ({
   pageParam = 1,
@@ -67,8 +68,7 @@ export const listProducts = async ({
             // `fields` list can drop defaults — without title/handle the PDP
             // treats the product as path "/" and permanentRedirects to home.
             // Keep this AFTER ...queryParams so callers can't wipe it.
-            fields:
-              "+id,+title,+handle,+description,+subtitle,+status,+thumbnail,+metadata,*variants.calculated_price,+variants.inventory_quantity,*variants.images,+variants.metadata,+tags,*categories,*images,*collection",
+            fields: PRODUCT_PDP_FIELDS,
           },
           headers,
           next,

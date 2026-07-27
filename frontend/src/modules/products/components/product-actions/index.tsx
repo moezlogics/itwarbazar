@@ -42,7 +42,10 @@ const optionsAsKeymap = (
   variantOptions: HttpTypes.StoreProductVariant["options"]
 ) => {
   return variantOptions?.reduce((acc: Record<string, string>, varopt: any) => {
-    acc[varopt.option_id] = varopt.value
+    const optionId = varopt.option_id ?? varopt.option?.id
+    if (optionId && varopt.value != null) {
+      acc[optionId] = String(varopt.value)
+    }
     return acc
   }, {})
 }

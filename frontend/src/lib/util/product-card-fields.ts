@@ -38,3 +38,13 @@ export const PRODUCT_CARD_FIELDS =
  */
 export const PRODUCT_ARCHIVE_FIELDS =
   PRODUCT_CARD_FIELDS + ",*options,*options.values,*categories.parent_category"
+
+/**
+ * Full field set for PDP (product detail page) fetches via listProducts.
+ *
+ * Medusa v2 drops unstated relations when `fields` is set — without
+ * `*options` / `*variants.options` the variant picker can't preselect or
+ * match clicks to a variant (buttons look dead / "Select Variant" forever).
+ */
+export const PRODUCT_PDP_FIELDS =
+  "+id,+title,+handle,+description,+subtitle,+status,+thumbnail,+metadata,+tags,*images,*categories,*collection,*options,*options.values,+variants.id,+variants.title,+variants.manage_inventory,+variants.allow_backorder,*variants.calculated_price,+variants.inventory_quantity,*variants.images,+variants.metadata,*variants.options"
