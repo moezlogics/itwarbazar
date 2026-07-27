@@ -420,6 +420,11 @@ export async function submitPromotionForm(
   }
 }
 
+function optionalCheckoutEmail(raw: unknown): string | undefined {
+  const value = typeof raw === "string" ? raw.trim() : ""
+  return value || undefined
+}
+
 // TODO: Pass a POJO instead of a form entity here
 export async function setAddresses(currentState: unknown, formData: FormData) {
   try {
@@ -430,6 +435,8 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     if (!cartId) {
       throw new Error("No existing cart found when setting addresses")
     }
+
+    const checkoutEmail = optionalCheckoutEmail(formData.get("email"))
 
     const data = {
       shipping_address: {
@@ -444,7 +451,7 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         province: formData.get("shipping_address.province"),
         phone: formData.get("shipping_address.phone"),
       },
-      email: formData.get("email"),
+      ...(checkoutEmail ? { email: checkoutEmail } : {}),
     } as any
 
     const sameAsBilling = formData.get("same_as_billing")
@@ -557,9 +564,11 @@ export async function setAddressesAndPlace(currentState: unknown, formData: Form
       phone: str("shipping_address.phone"),
     }
 
+    const checkoutEmail = optionalCheckoutEmail(str("email"))
+
     const data: any = {
       shipping_address: shippingAddress,
-      email: str("email"),
+      ...(checkoutEmail ? { email: checkoutEmail } : {}),
     }
 
     const sameAsBilling = formData.get("same_as_billing")
