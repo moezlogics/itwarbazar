@@ -27,7 +27,7 @@ async function fetchPublicBranding() {
     const backend = readBackendUrl()
     const res = await fetch(`${backend}/store/site-settings`)
     const data = await res.json().catch(() => ({}))
-    return (data?.settings || {}) as Record<string, string>
+    return data?.settings || {}
   } catch {
     return {}
   }
