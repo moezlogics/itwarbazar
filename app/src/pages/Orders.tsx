@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { clearToken, listOrders, OrderListItem, sendTestPush } from "../api"
+import {
+  clearToken,
+  listOrders,
+  OrderListItem,
+  sendTestPush,
+  shouldForceLogout,
+} from "../api"
 import { enablePush, getPushStatus, PushStatus } from "../push"
 import { useLiveRefresh } from "../useLiveRefresh"
 import { formatMoney, statusClass, timeAgo } from "../util"
@@ -72,7 +78,7 @@ export default function Orders() {
       setOrders(list)
       setCount(data.count || 0)
     } catch (e: any) {
-      if (e?.status === 401) return navigate("/login", { replace: true })
+      if (shouldForceLogout(e)) return navigate("/login", { replace: true })
       flash(e?.message || "Failed to load orders", true)
     } finally {
       setLoading(false)

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react"
-import { getSiteSettings, getToken } from "./api"
+import { getPublicSiteSettings, getSiteSettings, getToken } from "./api"
 import { STORE_LABEL } from "./config"
 
 type Settings = Record<string, string>
@@ -22,17 +22,37 @@ function applyTheme(s: Settings) {
   // We ignore storefront color themes to prevent light-mode overrides.
 }
 
+function applyBranding(s: Settings) {
+  const name = s?.site_name || STORE_LABEL
+  document.title = `${name} · Orders`
+
+  const iconUrl = s?.site_favicon_url || s?.site_logo_url
+  if (!iconUrl) return
+
+  const ensureLink = (selector: string, rel: string) => {
+    let el = document.head.querySelector(selector) as HTMLLinkElement | null
+    if (!el) {
+      el = document.createElement("link")
+      el.rel = rel
+      document.head.appendChild(el)
+    }
+    el.href = iconUrl
+  }
+
+  ensureLink('link[rel="icon"]', "icon")
+  ensureLink('link[rel="apple-touch-icon"]', "apple-touch-icon")
+}
+
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>({})
 
   const reload = () => {
-    if (!getToken()) return
-    getSiteSettings()
+    const loader = getToken() ? getSiteSettings : getPublicSiteSettings
+    loader()
       .then(({ settings }) => {
         setSettings(settings || {})
         applyTheme(settings || {})
-        const name = settings?.site_name || STORE_LABEL
-        document.title = `${name} · Orders`
+        applyBranding(settings || {})
       })
       .catch(() => {
         /* keep defaults */

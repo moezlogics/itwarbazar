@@ -82,12 +82,11 @@ export default defineConfig({
       authCors: process.env.AUTH_CORS!,
       jwtSecret,
       cookieSecret,
-      // Token lifetime. Medusa's default is short (~1 day) which logs
-      // both admins and customers out daily. 30d keeps sessions alive
-      // for a month; the value is overridable via JWT_EXPIRES_IN.
-      // (This is the per-token TTL — separate from the cookie maxAge on
-      // the storefront, which we match to 30d in cookies.ts.)
-      jwtExpiresIn: process.env.JWT_EXPIRES_IN || "30d",
+      // Token lifetime. This powers the admin Orders PWA too, where push
+      // alerts are most useful when a manager stays signed in for a long
+      // time on a personal device. Default to 365d unless env overrides.
+      // (Stable JWT_SECRET/COOKIE_SECRET above still remain mandatory.)
+      jwtExpiresIn: process.env.JWT_EXPIRES_IN || "365d",
     },
   },
   modules: {

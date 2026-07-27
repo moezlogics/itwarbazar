@@ -5,6 +5,7 @@ import {
   completeOrder,
   fulfillOrder,
   getOrder,
+  shouldForceLogout,
 } from "../api"
 import { formatMoney, statusClass, timeAgo } from "../util"
 import TopBar from "../components/TopBar"
@@ -31,7 +32,7 @@ export default function OrderDetail() {
       const data = await getOrder(id)
       setOrder(data.order)
     } catch (e: any) {
-      if (e?.status === 401) return navigate("/login", { replace: true })
+      if (shouldForceLogout(e)) return navigate("/login", { replace: true })
       flash(e?.message || "Failed to load order", true)
     } finally {
       setLoading(false)

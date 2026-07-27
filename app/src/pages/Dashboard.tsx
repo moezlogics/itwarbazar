@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { getDashboard } from "../api"
+import { getDashboard, shouldForceLogout } from "../api"
 import { formatMoney, statusClass, timeAgo } from "../util"
 import { useLiveRefresh } from "../useLiveRefresh"
 import TopBar from "../components/TopBar"
@@ -123,7 +123,7 @@ export default function Dashboard() {
         setData(d)
         setError(null)
       } catch (e: any) {
-        if (e?.status === 401) {
+        if (shouldForceLogout(e)) {
           navigate("/login", { replace: true })
         } else {
           setError(e?.message || "Failed to load dashboard statistics.")

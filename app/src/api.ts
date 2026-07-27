@@ -6,11 +6,34 @@ export const getToken = () => localStorage.getItem(TOKEN_KEY)
 export const setToken = (t: string) => localStorage.setItem(TOKEN_KEY, t)
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY)
 
+function getJwtExp(token: string | null): number | null {
+  if (!token) return null
+  try {
+    const payload = token.split(".")[1]
+    if (!payload) return null
+    const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")))
+    return typeof decoded?.exp === "number" ? decoded.exp : null
+  } catch {
+    return null
+  }
+}
+
+export function isStoredTokenExpired(): boolean {
+  const exp = getJwtExp(getToken())
+  return !!exp && exp * 1000 <= Date.now()
+}
+
+export function shouldForceLogout(error: any): boolean {
+  return error?.status === 401 && !!error?.forceLogout
+}
+
 export class ApiError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  forceLogout?: boolean
+  constructor(status: number, message: string, opts?: { forceLogout?: boolean }) {
     super(message)
     this.status = status
+    this.forceLogout = opts?.forceLogout
   }
 }
 
@@ -29,6 +52,15 @@ export async function login(email: string, password: string): Promise<string> {
   return data.token
 }
 
+export async function getPublicSiteSettings() {
+  const res = await fetch(`${BACKEND_URL}/store/site-settings`)
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new ApiError(res.status, data?.message || "Could not load site settings.")
+  }
+  return data as { settings: Record<string, string> }
+}
+
 /** Authenticated admin fetch. Adds Bearer token; throws on non-2xx. */
 export async function adminFetch<T = any>(
   path: string,
@@ -44,8 +76,19 @@ export async function adminFetch<T = any>(
   const res = await fetch(`${BACKEND_URL}${path}`, { ...init, headers })
 
   if (res.status === 401) {
-    clearToken()
-    throw new ApiError(401, "Session expired. Please log in again.")
+    if (isStoredTokenExpired()) {
+      clearToken()
+      throw new ApiError(401, "Session expired. Please log in again.", {
+        forceLogout: true,
+      })
+    }
+    // Do NOT eagerly clear the token on a single 401. In PWAs this can
+    // happen after a backend restart, clock drift, or a one-off auth hiccup;
+    // keeping the token avoids surprise logouts that stop notifications.
+    throw new ApiError(
+      401,
+      "Authentication check failed temporarily. Please try again."
+    )
   }
   const text = await res.text()
   const data = text ? JSON.parse(text) : {}
